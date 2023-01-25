@@ -1,0 +1,14 @@
+{
+	"manifest_version": 2,
+
+	"name": "Youtube Music Organiser",
+	"description": "...",
+	"version": "0.1",
+
+  "content_scripts": [
+		{
+			"matches": ["https://music.youtube.com/playlist*"],
+			"js": ["jquery.min.js", "main.js"]
+		}
+	]
+}
