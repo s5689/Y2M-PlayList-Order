@@ -28,18 +28,13 @@ function script() {
   function organizar(e) {
     order(e);
 
-    $('.style-scope ytmusic-playlist-shelf-renderer').empty();
+    $('#contents.ytmusic-playlist-shelf-renderer').empty();
 
     songs.forEach((value) => {
-      $('.style-scope ytmusic-playlist-shelf-renderer').append(
+      $('#contents.ytmusic-playlist-shelf-renderer').append(
         songsHtml[value.id]
       );
     });
-
-    /*
-    console.log(orderState);
-    console.log(songs[0]);
-    */
   }
 
   function order(e) {
@@ -146,6 +141,9 @@ function script() {
         duracion: tempHtml[k].children[6].children[0].innerText,
       });
     }
+
+    console.log(songs);
+    console.log(songsHtml);
 
     // Generar Botones & Info
     document

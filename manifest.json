@@ -7,7 +7,7 @@
 
   "content_scripts": [
 		{
-			"matches": ["https://music.youtube.com/playlist*"],
+			"matches": ["https://music.youtube.com/playlist?list=LM"],
 			"js": ["jquery.min.js", "main.js"]
 		}
 	]
