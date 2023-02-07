@@ -4,6 +4,7 @@ function script() {
   const ARTISTA = 'ARTISTA';
   const ALBUM = 'ALBUM';
   const DURACION = 'DURACION';
+  const DEFAULT = 'DEFAULT';
 
   const songsHtml = [];
   const songs = [];
@@ -13,23 +14,13 @@ function script() {
     artista: false,
     album: false,
     duracion: false,
+    default: true,
   };
 
   getSize();
   if (!isNaN(listSize)) init();
 
-  function organizar(e) {
-    order(e);
-
-    $('#contents.ytmusic-playlist-shelf-renderer').empty();
-
-    songs.forEach((value) => {
-      $('#contents.ytmusic-playlist-shelf-renderer').append(
-        songsHtml[value.id]
-      );
-    });
-  }
-
+  // Funciones del DOM
   function seleccionar(e) {
     const imgCheck = `
     <svg 
@@ -55,9 +46,11 @@ function script() {
         </g>
     </svg>`;
 
+    const foundSong = songs.find((value) => value.id === e);
+
     $(songsHtml[e].children[7].children[2].children[0]).empty();
 
-    if (!songs[e].selected) {
+    if (!foundSong.selected) {
       $(songsHtml[e]).attr('is-checked', '""');
       $(songsHtml[e].children[7].children[2].children[0]).append(imgCheck);
     } else {
@@ -65,13 +58,38 @@ function script() {
       $(songsHtml[e].children[7].children[2].children[0]).append(imgUnCheck);
     }
 
-    songs[e].selected = !songs[e].selected;
+    foundSong.selected = !foundSong.selected;
+  }
+
+  function deseleccionar() {
+    const foundSelected = [];
+    songs.find((value) => {
+      if (value.selected === true) seleccionar(value.id);
+    });
+  }
+
+  function organizar(e) {
+    order(e);
+
+    $('#contents.ytmusic-playlist-shelf-renderer').empty();
+
+    songs.forEach((value) => {
+      $('#contents.ytmusic-playlist-shelf-renderer').append(
+        songsHtml[value.id]
+      );
+    });
   }
 
   function order(e) {
     switch (e) {
       case NOMBRE: {
-        orderState.nombre = !orderState.nombre;
+        orderState = {
+          nombre: !orderState.nombre,
+          artista: false,
+          album: false,
+          duracion: false,
+          default: false,
+        };
 
         if (orderState.nombre)
           songs.sort((a, b) => {
@@ -88,7 +106,13 @@ function script() {
       }
 
       case ARTISTA: {
-        orderState.artista = !orderState.artista;
+        orderState = {
+          nombre: false,
+          artista: !orderState.artista,
+          album: false,
+          duracion: false,
+          default: false,
+        };
 
         if (orderState.artista)
           songs.sort((a, b) => {
@@ -105,7 +129,13 @@ function script() {
       }
 
       case ALBUM: {
-        orderState.album = !orderState.album;
+        orderState = {
+          nombre: false,
+          artista: false,
+          album: !orderState.album,
+          duracion: false,
+          default: false,
+        };
 
         if (orderState.album)
           songs.sort((a, b) => {
@@ -122,22 +152,108 @@ function script() {
       }
 
       case DURACION: {
-        orderState.duracion = !orderState.duracion;
+        orderState = {
+          nombre: false,
+          artista: false,
+          album: false,
+          duracion: !orderState.duracion,
+          default: false,
+        };
 
         if (orderState.duracion)
           songs.sort((a, b) => {
-            if (a.duracion.toLowerCase() > b.duracion.toLowerCase()) return 1;
+            if (getA(a) > getB(b)) return 1;
             return -1;
           });
         else
           songs.sort((a, b) => {
-            if (a.duracion.toLowerCase() > b.duracion.toLowerCase()) return -1;
+            if (getA(a) > getB(b)) return -1;
+            return 1;
+          });
+
+        function getA(a) {
+          const posA = a.duracion.search(':');
+          const minA = Number(a.duracion.substring(0, posA));
+          const secA = Number(
+            a.duracion.substring(posA + 1, a.duracion.length)
+          );
+
+          return minA * 60 + secA;
+        }
+
+        function getB(b) {
+          const posB = b.duracion.search(':');
+          const minB = Number(b.duracion.substring(0, posB));
+          const secB = Number(
+            b.duracion.substring(posB + 1, b.duracion.length)
+          );
+
+          return minB * 60 + secB;
+        }
+
+        break;
+      }
+
+      case DEFAULT: {
+        orderState = {
+          nombre: false,
+          artista: false,
+          album: false,
+          duracion: false,
+          default: !orderState.default,
+        };
+
+        if (orderState.default)
+          songs.sort((a, b) => {
+            if (a.id > b.id) return 1;
+            return -1;
+          });
+        else
+          songs.sort((a, b) => {
+            if (a.id > b.id) return -1;
             return 1;
           });
 
         break;
       }
     }
+  }
+
+  // Detectar cuando aparezca interfaz de seleccion
+  document.addEventListener('DOMSubtreeModified', async (e) => {
+    try {
+      if (typeof $(e.target).attr('menu-text') !== 'undefined') {
+        await sleep(10);
+        interfaceInjection();
+      }
+
+      if ($(e.target)[0].localName === 'tp-yt-paper-listbox') {
+        if (typeof $(e.target)[0].children[2] !== 'undefined') {
+          await sleep(10);
+          interfaceInjection();
+        }
+      }
+    } catch (error) {}
+  });
+
+  // Inyectar funciones dentro de la interfaz de Seleccion cada vez que aparezca
+  function interfaceInjection() {
+    const injection = {
+      onclick: 'deseleccionar()',
+      style: 'border: 1px solid dimgrey; border-radius: 30px;',
+    };
+
+    const menuInjection = {
+      onclick: 'deseleccionar()',
+      style: 'border-left: 1px solid white;',
+    };
+
+    $(
+      $('ytmusic-dialog').find('#icon.style-scope.tp-yt-paper-icon-button')[0]
+    ).attr(injection);
+
+    $($('button#button')[1]).attr(injection);
+    $($('tp-yt-paper-listbox')[0].children[2]).attr(menuInjection);
   }
 
   // Obtener cantidad de canciones desde el total de canciones, de existir.
@@ -162,23 +278,25 @@ function script() {
 
   // Inicializar extension si existe numero total de canciones.
   async function init() {
-    let tempHtml = null;
+    let tempHtml = [];
 
     // Scroll hasta que las canciones encontradas sean del tamaño de la lista.
     const scrollingElement = document.scrollingElement || document.body;
 
-    do {
+    while (tempHtml.length !== listSize) {
       scrollingElement.scrollTop = scrollingElement.scrollHeight;
 
       tempHtml = document.getElementsByTagName(
         'ytmusic-responsive-list-item-renderer'
       );
 
-      await sleep(2500);
-    } while (tempHtml.length !== listSize);
+      await sleep(500);
+    }
 
+    // Subir Scroll
     scrollingElement.scrollTop = 0;
 
+    // Seleccionar y Deseleccionar la primera cancion de la lista para generar los div de Seleccion
     $(tempHtml[0].children[6].children[2].children[0]).click();
     await sleep(1200);
     $(tempHtml[0].children[7].children[2].children[0]).click();
@@ -240,6 +358,13 @@ function script() {
         'beforeend',
         `<button onclick="organizar(${DURACION})">Por Duracion</button>`
       );
+
+    document
+      .querySelector('#header')
+      .insertAdjacentHTML(
+        'beforeend',
+        `<button onclick="organizar(${DEFAULT})">Por defecto</button>`
+      );
   }
 
   async function sleep(ms) {
@@ -253,4 +378,6 @@ $('head').append(
   '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>'
 );
 
-$('head').append(`<script>${main}</script>`);
+$(() => {
+  $('head').append(`<script>${main}</script>`);
+});
