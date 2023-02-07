@@ -1,13 +1,4 @@
 function script() {
-  // Obtener cantidad de canciones desde el total de canciones.
-  const listSize = Number(
-    document
-      .getElementsByClassName(
-        'second-subtitle style-scope ytmusic-detail-header-renderer'
-      )[0]
-      .innerHTML.replace(' canciones', '')
-  );
-
   // Constantes de Argumentos.
   const NOMBRE = 'NOMBRE';
   const ARTISTA = 'ARTISTA';
@@ -16,6 +7,7 @@ function script() {
 
   const songsHtml = [];
   const songs = [];
+  let listSize;
   let orderState = {
     nombre: false,
     artista: false,
@@ -23,7 +15,8 @@ function script() {
     duracion: false,
   };
 
-  init();
+  getSize();
+  if (!isNaN(listSize)) init();
 
   function organizar(e) {
     order(e);
@@ -35,6 +28,44 @@ function script() {
         songsHtml[value.id]
       );
     });
+  }
+
+  function seleccionar(e) {
+    const imgCheck = `
+    <svg 
+      viewBox="0 0 24 24" 
+      preserveAspectRatio="xMidYMid meet" 
+      focusable="false" 
+      class="style-scope yt-icon" 
+      style="pointer-events: none; display: block; width: 100%; height: 100%;">
+        <g class="style-scope yt-icon">
+          <path d="M3 3V21H21V3H3ZM9.65 17L5.85 13.2L7.26 11.79L9.64 14.17L16.73 7.08L18.14 8.49L9.65 17Z" class="style-scope yt-icon"></path>
+        </g>
+    </svg>`;
+
+    const imgUnCheck = `
+    <svg
+      viewBox="0 0 24 24"
+      preserveAspectRatio="xMidYMid meet"
+      focusable="false"
+      class="style-scope yt-icon" 
+      style="pointer-events: none; display: block; width: 100%; height: 100%;">
+        <g class="style-scope yt-icon">
+          <path d="M3 3V21H21V3H3ZM20 20H4V4H20V20Z" class="style-scope yt-icon"></path>
+        </g>
+    </svg>`;
+
+    $(songsHtml[e].children[7].children[2].children[0]).empty();
+
+    if (!songs[e].selected) {
+      $(songsHtml[e]).attr('is-checked', '""');
+      $(songsHtml[e].children[7].children[2].children[0]).append(imgCheck);
+    } else {
+      $(songsHtml[e]).removeAttr('is-checked');
+      $(songsHtml[e].children[7].children[2].children[0]).append(imgUnCheck);
+    }
+
+    songs[e].selected = !songs[e].selected;
   }
 
   function order(e) {
@@ -109,6 +140,27 @@ function script() {
     }
   }
 
+  // Obtener cantidad de canciones desde el total de canciones, de existir.
+  function getSize() {
+    listSize = Number(
+      document
+        .querySelector(
+          '.second-subtitle.style-scope.ytmusic-detail-header-renderer'
+        )
+        .innerHTML.replace(' canciones', '')
+    );
+
+    if (isNaN(listSize))
+      listSize = Number(
+        document
+          .querySelector(
+            '.second-subtitle.style-scope.ytmusic-detail-header-renderer'
+          )
+          .children[0].innerHTML.replace(' canciones', '')
+      );
+  }
+
+  // Inicializar extension si existe numero total de canciones.
   async function init() {
     let tempHtml = null;
 
@@ -122,28 +174,36 @@ function script() {
         'ytmusic-responsive-list-item-renderer'
       );
 
-      await sleep(3000);
+      await sleep(2500);
     } while (tempHtml.length !== listSize);
 
     scrollingElement.scrollTop = 0;
 
+    $(tempHtml[0].children[6].children[2].children[0]).click();
+    await sleep(1200);
+    $(tempHtml[0].children[7].children[2].children[0]).click();
+
     // Generar JSON con canciones armadas con sus id's.
     for (let k = 0; k < listSize; k++) {
+      // Preparar DOM para las selecciones
       tempHtml[k].id = `n${k}`;
+      $(tempHtml[k].children[1]).attr('onclick', `seleccionar(${k})`);
+      $(tempHtml[k].children[7].children[2].children[0]).attr(
+        'onclick',
+        `seleccionar(${k})`
+      );
 
       songsHtml.push(tempHtml[k]);
 
       songs.push({
         id: k,
-        nombre: tempHtml[k].children[4].children[0].children[0].innerText,
-        artista: tempHtml[k].children[4].children[2].children[0].innerText,
-        album: tempHtml[k].children[4].children[2].children[1].innerText,
-        duracion: tempHtml[k].children[6].children[0].innerText,
+        nombre: tempHtml[k].children[5].children[0].children[0].innerText,
+        artista: tempHtml[k].children[5].children[2].children[0].innerText,
+        album: tempHtml[k].children[5].children[2].children[1].innerText,
+        duracion: tempHtml[k].children[7].children[0].innerText,
+        selected: false,
       });
     }
-
-    console.log(songs);
-    console.log(songsHtml);
 
     // Generar Botones & Info
     document

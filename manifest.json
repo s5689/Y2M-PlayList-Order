@@ -3,11 +3,11 @@
 
 	"name": "Youtube Music Organiser",
 	"description": "...",
-	"version": "0.1",
+	"version": "0.9",
 
   "content_scripts": [
 		{
-			"matches": ["https://music.youtube.com/playlist?list=LM"],
+			"matches": ["https://music.youtube.com/playlist*"],
 			"js": ["jquery.min.js", "main.js"]
 		}
 	]
