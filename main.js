@@ -62,7 +62,6 @@ function script() {
   }
 
   function deseleccionar() {
-    const foundSelected = [];
     songs.find((value) => {
       if (value.selected === true) seleccionar(value.id);
     });
@@ -77,6 +76,13 @@ function script() {
       $('#contents.ytmusic-playlist-shelf-renderer').append(
         songsHtml[value.id]
       );
+    });
+
+    songs.find((value) => {
+      if (value.selected === true) {
+        value.selected = false;
+        seleccionar(value.id);
+      }
     });
   }
 
@@ -245,7 +251,7 @@ function script() {
 
     const menuInjection = {
       onclick: 'deseleccionar()',
-      style: 'border-left: 1px solid white;',
+      style: 'border-left: 1px solid orangered;',
     };
 
     $(
